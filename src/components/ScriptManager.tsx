@@ -604,6 +604,12 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
       )}
 
 
+      {roleView === 'client' && (
+        <div className="bg-emerald-100 border-b border-emerald-200 text-emerald-800 p-2 text-center text-sm font-bold flex justify-center items-center gap-2">
+          <CheckCircle className="w-4 h-4" /> 客戶可直接在分鏡留言區給予回饋並點擊審核狀態。
+        </div>
+      )}
+
       <main className="max-w-7xl mx-auto mt-6 px-4">
         {/* 專案基本資料 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100 relative overflow-hidden">
