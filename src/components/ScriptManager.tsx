@@ -446,7 +446,10 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
       <header className="bg-slate-900 text-white px-4 py-3 shadow-md sticky top-0 z-40">
         <div className="max-w-screen-2xl mx-auto flex justify-between items-center gap-2">
           <div className="flex items-center gap-3 min-w-0">
-            <Link href="/script" className="shrink-0"><BrandLogo theme="dark" /></Link>
+            {initialRole === 'internal'
+              ? <Link href="/script" className="shrink-0"><BrandLogo theme="dark" /></Link>
+              : <div className="shrink-0"><BrandLogo theme="dark" /></div>
+            }
             <div className="w-px h-6 bg-slate-700 shrink-0 hidden sm:block" />
             <h1 className="text-sm font-semibold text-slate-300 truncate hidden sm:block">{project.name}</h1>
           </div>
