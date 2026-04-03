@@ -15,11 +15,13 @@ async function getProject(id: string) {
       id: page.id,
       name: p.name?.title?.[0]?.plain_text || '未命名專案',
       clientName: p.client_name?.rich_text?.[0]?.plain_text || '',
+      clientToken: p.client_token?.rich_text?.[0]?.plain_text || '',
       platform: p.platform?.select?.name || '',
       format: p.format?.select?.name || '',
       duration: p.duration?.number ?? 15,
       videoType: p.video_type?.rich_text?.[0]?.plain_text || '',
       status: p.status?.select?.name || '草稿中',
+      notes: p.notes?.rich_text?.[0]?.plain_text || '',
     };
   } catch {
     return null;

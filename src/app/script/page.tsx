@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Clapperboard, Clock, ChevronRight, Loader2, Link2 } from 'lucide-react';
+import { Plus, Clapperboard, Clock, ChevronRight, Loader2, Link2, Trash2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 interface Project {
@@ -38,6 +38,13 @@ function ScriptListPage() {
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const deleteProject = async (e: React.MouseEvent, id: string, name: string) => {
+    e.stopPropagation();
+    if (!window.confirm(`確定要刪除「${name}」嗎？此動作無法復原。`)) return;
+    await fetch(`/api/projects/${id}`, { method: 'DELETE' });
+    setProjects(prev => prev.filter(p => p.id !== id));
+  };
 
   const copyClientLink = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
@@ -232,16 +239,27 @@ function ScriptListPage() {
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{project.duration}s</span>
                   </div>
                 </div>
-                {!clientToken && project.clientToken && (
-                  <button
-                    onClick={e => copyClientLink(e, project)}
-                    title="複製客戶連結"
-                    className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-blue-400 transition-colors shrink-0"
-                  >
-                    {copiedId === project.id
-                      ? <span className="text-[10px] font-bold text-green-400">已複製</span>
-                      : <Link2 className="w-3.5 h-3.5" />}
-                  </button>
+                {!clientToken && (
+                  <div className="flex items-center gap-1 shrink-0">
+                    {project.clientToken && (
+                      <button
+                        onClick={e => copyClientLink(e, project)}
+                        title="複製客戶連結"
+                        className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-blue-400 transition-colors"
+                      >
+                        {copiedId === project.id
+                          ? <span className="text-[10px] font-bold text-green-400">已複製</span>
+                          : <Link2 className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
+                    <button
+                      onClick={e => deleteProject(e, project.id, project.name)}
+                      title="刪除專案"
+                      className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-600 hover:text-red-400 transition-colors"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                 )}
                 <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" />
               </button>

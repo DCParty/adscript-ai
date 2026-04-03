@@ -49,11 +49,13 @@ interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientToken: string;
   platform: string;
   format: string;
   duration: number;
   videoType: string;
   status: string;
+  notes: string;
 }
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -90,13 +92,16 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
       id: projectId,
       name: '載入中...',
       clientName: '',
+      clientToken: '',
       platform: '',
       format: '',
       duration: 15,
       videoType: '',
       status: '草稿中',
+      notes: '',
     }
   );
+  const [copiedLink, setCopiedLink] = useState(false);
 
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showJsonMode, setShowJsonMode] = useState(false);
@@ -135,6 +140,24 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
     },
     500
   );
+
+  const debouncedProjectPatch = useDebouncedCallback(
+    async (field: string, value: unknown) => {
+      await fetch(`/api/projects/${projectId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field, value }),
+      });
+    },
+    500
+  );
+
+  const copyClientLink = () => {
+    const url = `${window.location.origin}/script?c=${project.clientToken}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLink(true);
+    setTimeout(() => setCopiedLink(false), 2000);
+  };
 
   // ── Handlers ────────────────────────────────────────────────────────────
 
@@ -431,18 +454,38 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
             <div className="w-px h-6 bg-slate-700" />
             <h1 className="text-base font-semibold text-slate-300 truncate max-w-xs">{project.name}</h1>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {roleView === 'internal' && (
               <>
+                <select
+                  value={project.status}
+                  onChange={e => {
+                    setProject({ ...project, status: e.target.value });
+                    debouncedProjectPatch('status', e.target.value);
+                  }}
+                  className="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors"
+                >
+                  {['草稿中', '待客戶審核', '製作中', '已完成'].map(s => <option key={s}>{s}</option>)}
+                </select>
+                {project.clientToken && (
+                  <button
+                    onClick={copyClientLink}
+                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
+                    title="複製客戶連結"
+                  >
+                    <LinkIcon className="w-4 h-4" />
+                    {copiedLink ? '已複製！' : '客戶連結'}
+                  </button>
+                )}
                 <button
                   onClick={() => setShowSettingsModal(true)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
                 >
-                  <Cpu className="w-4 h-4" /> 工具與成本設定
+                  <Cpu className="w-4 h-4" /> 工具與成本
                 </button>
                 <button
                   onClick={downloadAllImages}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
                 >
                   <Download className="w-4 h-4" /> 批量下載
                 </button>
@@ -631,6 +674,25 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
           )}
         </div>
 
+
+        {/* 專案備註 */}
+        {roleView === 'internal' && (
+          <div className="mb-6 bg-white border border-slate-200 rounded-xl p-4 shadow-sm">
+            <label className="text-xs font-bold text-slate-500 uppercase mb-2 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> 內部備註
+            </label>
+            <textarea
+              value={project.notes}
+              onChange={e => {
+                setProject({ ...project, notes: e.target.value });
+                debouncedProjectPatch('notes', e.target.value);
+              }}
+              placeholder="記錄客戶需求、製作方向、特殊說明..."
+              rows={2}
+              className="w-full text-sm p-2 border border-slate-200 rounded-lg outline-none resize-none focus:border-blue-400 text-slate-700"
+            />
+          </div>
+        )}
 
         {/* 場景與分鏡列表 */}
         <div className="space-y-8">
