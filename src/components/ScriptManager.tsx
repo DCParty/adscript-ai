@@ -290,9 +290,9 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
       approvalStatus: 'pending',
     };
 
-    setScenes(prev => prev.map(s =>
+    setScenes(prev => regenShotCodes(prev.map(s =>
       s.id === sceneId ? { ...s, shots: [...s.shots, tempShot] } : s
-    ));
+    )));
 
     try {
       const res = await fetch('/api/shots', {
@@ -319,51 +319,40 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
   };
 
   const duplicateShot = (sceneId: string, shotIndex: number) => {
-    setScenes(scenes.map(scene => {
+    const updated = scenes.map(scene => {
       if (scene.id === sceneId) {
         const shotToCopy = scene.shots[shotIndex];
-        let newShotCode = shotToCopy.shotCode;
-        if (!newShotCode.includes('A') && !newShotCode.includes('B') && !newShotCode.includes('C')) {
-          const newShots = [...scene.shots];
-          newShots[shotIndex] = { ...newShots[shotIndex], shotCode: newShotCode + 'A' };
-          newShotCode = newShotCode + 'B';
-          const newShot: Shot = {
-            ...shotToCopy,
-            id: 'temp-' + Date.now(),
-            shotCode: newShotCode,
-            isAlternative: true,
-            approvalStatus: 'pending',
-            clientFeedback: '',
-          };
-          newShots.splice(shotIndex + 1, 0, newShot);
-          return { ...scene, shots: newShots };
-        } else {
-          newShotCode = newShotCode + ' (備案)';
-          const newShot: Shot = {
-            ...shotToCopy,
-            id: 'temp-' + Date.now(),
-            shotCode: newShotCode,
-            isAlternative: true,
-            approvalStatus: 'pending',
-            clientFeedback: '',
-          };
-          const newShots = [...scene.shots];
-          newShots.splice(shotIndex + 1, 0, newShot);
-          return { ...scene, shots: newShots };
-        }
+        const newShot: Shot = {
+          ...shotToCopy,
+          id: 'temp-' + Date.now(),
+          shotCode: String(shotIndex + 2),
+          isAlternative: true,
+          approvalStatus: 'pending',
+          clientFeedback: '',
+        };
+        const newShots = [...scene.shots];
+        newShots.splice(shotIndex + 1, 0, newShot);
+        return { ...scene, shots: newShots };
       }
       return scene;
-    }));
+    });
+    setScenes(regenShotCodes(updated));
   };
 
   const removeShot = async (sceneId: string, shotId: string) => {
-    setScenes(scenes.map(scene =>
+    setScenes(regenShotCodes(scenes.map(scene =>
       scene.id === sceneId ? { ...scene, shots: scene.shots.filter(s => s.id !== shotId) } : scene
-    ));
+    )));
     if (!shotId.startsWith('temp-')) {
       await fetch(`/api/shots/${shotId}`, { method: 'DELETE' }).catch(console.error);
     }
   };
+
+  const regenShotCodes = (sceneList: Scene[]): Scene[] =>
+    sceneList.map(scene => ({
+      ...scene,
+      shots: scene.shots.map((shot, i) => ({ ...shot, shotCode: String(i + 1) })),
+    }));
 
   const moveScene = (index: number, direction: 'up' | 'down') => {
     const newScenes = [...scenes];
@@ -371,11 +360,11 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
       [newScenes[index - 1], newScenes[index]] = [newScenes[index], newScenes[index - 1]];
     else if (direction === 'down' && index < scenes.length - 1)
       [newScenes[index + 1], newScenes[index]] = [newScenes[index], newScenes[index + 1]];
-    setScenes(newScenes);
+    setScenes(regenShotCodes(newScenes));
   };
 
   const moveShot = (sceneId: string, index: number, direction: 'up' | 'down') => {
-    setScenes(scenes.map(scene => {
+    const updated = scenes.map(scene => {
       if (scene.id === sceneId) {
         const newShots = [...scene.shots];
         if (direction === 'up' && index > 0)
@@ -385,7 +374,8 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
         return { ...scene, shots: newShots };
       }
       return scene;
-    }));
+    });
+    setScenes(regenShotCodes(updated));
   };
 
   // Force save all shot indices to Notion
@@ -411,6 +401,11 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ field: 'scene_name', value: scene.name }),
+          });
+          await fetch(`/api/shots/${shot.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ field: 'shotCode', value: String(shi + 1) }),
           });
           await new Promise(r => setTimeout(r, 350));
         }
