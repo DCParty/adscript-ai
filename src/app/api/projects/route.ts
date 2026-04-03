@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
         id: page.id,
         name: p.name?.title?.[0]?.plain_text || '未命名專案',
         clientName: p.client_name?.rich_text?.[0]?.plain_text || '',
+        clientToken: p.client_token?.rich_text?.[0]?.plain_text || '',
         platform: p.platform?.select?.name || '',
         format: p.format?.select?.name || '',
         duration: p.duration?.number ?? 15,
@@ -39,14 +40,16 @@ export async function GET(req: NextRequest) {
 // POST /api/projects — create new project
 export async function POST(req: NextRequest) {
   try {
-    const { name, clientName, clientToken, platform, format, duration, videoType } = await req.json();
+    const { name, clientName, platform, format, duration, videoType } = await req.json();
+
+    const token = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
 
     const page = await notion.pages.create({
       parent: { database_id: process.env.NOTION_SCRIPT_PROJECTS_DB_ID! },
       properties: {
         name: { title: [{ text: { content: name || '新專案' } }] },
         client_name: { rich_text: [{ text: { content: clientName || '' } }] },
-        client_token: { rich_text: [{ text: { content: clientToken || '' } }] },
+        client_token: { rich_text: [{ text: { content: token } }] },
         platform: platform ? { select: { name: platform } } : undefined,
         format: format ? { select: { name: format } } : undefined,
         duration: { number: Number(duration) || 15 },
@@ -55,7 +58,7 @@ export async function POST(req: NextRequest) {
       } as any,
     });
 
-    return NextResponse.json({ id: page.id });
+    return NextResponse.json({ id: page.id, clientToken: token });
   } catch (err) {
     console.error('[projects POST]', err);
     return NextResponse.json({ error: 'Failed to create project' }, { status: 500 });

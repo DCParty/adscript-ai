@@ -2,13 +2,14 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Plus, Clapperboard, Clock, ChevronRight, Loader2 } from 'lucide-react';
+import { Plus, Clapperboard, Clock, ChevronRight, Loader2, Link2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
 interface Project {
   id: string;
   name: string;
   clientName: string;
+  clientToken: string;
   platform: string;
   format: string;
   duration: number;
@@ -36,6 +37,15 @@ function ScriptListPage() {
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  const copyClientLink = (e: React.MouseEvent, project: Project) => {
+    e.stopPropagation();
+    const url = `${window.location.origin}/script?c=${project.clientToken}`;
+    navigator.clipboard.writeText(url);
+    setCopiedId(project.id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
   const [form, setForm] = useState({
     name: '',
     clientName: '',
@@ -222,6 +232,17 @@ function ScriptListPage() {
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{project.duration}s</span>
                   </div>
                 </div>
+                {!clientToken && project.clientToken && (
+                  <button
+                    onClick={e => copyClientLink(e, project)}
+                    title="複製客戶連結"
+                    className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-blue-400 transition-colors shrink-0"
+                  >
+                    {copiedId === project.id
+                      ? <span className="text-[10px] font-bold text-green-400">已複製</span>
+                      : <Link2 className="w-3.5 h-3.5" />}
+                  </button>
+                )}
                 <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-slate-400 shrink-0 transition-colors" />
               </button>
             ))}
