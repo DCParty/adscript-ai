@@ -240,16 +240,15 @@ function ScriptListPage() {
                   </div>
                 </div>
                 {!clientToken && (
-                  <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex items-center gap-2 shrink-0">
                     {project.clientToken && (
                       <button
                         onClick={e => copyClientLink(e, project)}
-                        title="複製客戶連結"
-                        className="p-1.5 rounded-lg hover:bg-slate-700 text-slate-500 hover:text-blue-400 transition-colors"
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-all text-xs font-bold"
                       >
                         {copiedId === project.id
-                          ? <span className="text-[10px] font-bold text-green-400">已複製</span>
-                          : <Link2 className="w-3.5 h-3.5" />}
+                          ? <><span className="text-green-400">✓</span> 已複製</>
+                          : <><Link2 className="w-3 h-3" /> 複製客戶連結</>}
                       </button>
                     )}
                     <button
