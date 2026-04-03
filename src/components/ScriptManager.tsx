@@ -6,9 +6,10 @@ import {
   Plus, Trash2, Video, FileText, CheckCircle, Cpu, Save, Clock,
   X, Image as ImageIcon, MessageSquare, Check, XCircle, Eye, EyeOff,
   Type, ArrowUp, ArrowDown, DollarSign, Copy, GitBranch, Clapperboard,
-  FolderPlus, Link as LinkIcon, Download, Sparkles, Code,
+  FolderPlus, Link as LinkIcon, Download,
 } from 'lucide-react';
 import BrandLogo from './BrandLogo';
+import Link from 'next/link';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,8 +101,6 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [showJsonMode, setShowJsonMode] = useState(false);
   const [jsonInput, setJsonInput] = useState('');
-  const [showAiImportModal, setShowAiImportModal] = useState(false);
-  const [scriptJsonInput, setScriptJsonInput] = useState('');
   const [aiToolsConfig, setAiToolsConfig] = useState<AiTool[]>(DEFAULT_AI_TOOLS);
 
   // ── Load shots from API ──────────────────────────────────────────────────
@@ -398,43 +397,6 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
     }
   };
 
-  const applyAiScript = async () => {
-    let parsedScenes: Scene[];
-    try {
-      parsedScenes = JSON.parse(scriptJsonInput);
-      if (!Array.isArray(parsedScenes)) {
-        alert('JSON 格式錯誤：必須是包含場景的 Array。');
-        return;
-      }
-    } catch {
-      alert('JSON 解析失敗，請檢查語法。');
-      return;
-    }
-
-    setScenes(parsedScenes);
-    setShowAiImportModal(false);
-
-    // 寫入 Notion（bulk）
-    try {
-      const res = await fetch('/api/shots/bulk', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ projectId, scenes: parsedScenes }),
-      });
-      const data = await res.json();
-      if (data.ok) {
-        // 重新從 Notion 載入以取得真實 ID
-        const fresh = await fetch(`/api/projects/${projectId}/shots`).then(r => r.json());
-        if (Array.isArray(fresh)) setScenes(fresh);
-        alert(`✅ AI 腳本已成功匯入！共 ${data.count} 個分鏡。`);
-      } else {
-        alert('⚠️ 前端已套用，但寫入 Notion 失敗：' + data.error);
-      }
-    } catch (err) {
-      console.error('bulk import failed', err);
-      alert('⚠️ 前端已套用，但 Notion 同步失敗，請按「強制儲存」重試。');
-    }
-  };
 
   // ── Computed stats ───────────────────────────────────────────────────────
 
@@ -465,7 +427,7 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
       <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-40">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <BrandLogo theme="dark" />
+            <Link href="/script"><BrandLogo theme="dark" /></Link>
             <div className="w-px h-6 bg-slate-700" />
             <h1 className="text-base font-semibold text-slate-300 truncate max-w-xs">{project.name}</h1>
           </div>
@@ -511,50 +473,6 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
         </div>
       </header>
 
-      {/* AI 腳本匯入 Modal */}
-      {showAiImportModal && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full p-6 flex flex-col h-[80vh]">
-            <div className="flex justify-between items-center mb-4 shrink-0">
-              <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                <Sparkles className="w-6 h-6 text-purple-600" />
-                AI 腳本自動生成 / MCP 對接橋樑
-              </h3>
-              <button onClick={() => setShowAiImportModal(false)} className="text-gray-400 hover:text-gray-600"><X className="w-6 h-6" /></button>
-            </div>
-            <div className="bg-purple-50 border border-purple-100 rounded-lg p-4 mb-4 shrink-0 flex items-start gap-3">
-              <Code className="w-5 h-5 text-purple-600 mt-0.5" />
-              <div>
-                <p className="text-sm font-bold text-purple-900 mb-1">給開發者與 MCP 系統的提示：</p>
-                <p className="text-xs text-purple-700">當 Claude 等 AI 代理人接收到策略 (Phase 1) 之後，可以透過 MCP 的 <code>update_script_scenes</code> 工具，將生成的腳本轉換為下方的 JSON 陣列直接推送到資料庫。</p>
-              </div>
-            </div>
-            <div className="flex-1 overflow-hidden flex flex-col mb-4 border border-slate-200 rounded-lg bg-slate-900 shadow-inner">
-              <div className="bg-slate-800 text-slate-400 text-xs px-4 py-2 border-b border-slate-700 flex justify-between">
-                <span className="font-mono">expected_schema.json (Array of Scenes)</span>
-                <button
-                  onClick={() => setScriptJsonInput(JSON.stringify(scenes, null, 2))}
-                  className="text-blue-400 hover:text-blue-300 transition-colors"
-                >
-                  載入目前系統腳本以供參考
-                </button>
-              </div>
-              <textarea
-                value={scriptJsonInput}
-                onChange={(e) => setScriptJsonInput(e.target.value)}
-                className="w-full flex-1 text-sm font-mono p-4 bg-transparent text-emerald-400 outline-none resize-none"
-                placeholder={'[\n  {\n    "id": "scene-1",\n    "name": "場景名稱",\n    "shots": []\n  }\n]'}
-              />
-            </div>
-            <div className="shrink-0 flex justify-end gap-3">
-              <button onClick={() => setShowAiImportModal(false)} className="px-5 py-2.5 rounded-lg font-bold text-slate-500 hover:bg-slate-100 transition-colors">取消</button>
-              <button onClick={applyAiScript} className="px-6 py-2.5 rounded-lg font-bold bg-purple-600 hover:bg-purple-500 text-white transition-colors flex items-center gap-2 shadow-md">
-                <Sparkles className="w-4 h-4" /> 套用並渲染 AI 腳本
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* 設定 Modal */}
       {showSettingsModal && (
@@ -713,17 +631,6 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
           )}
         </div>
 
-        {/* AI / MCP 匯入按鈕 */}
-        {roleView === 'internal' && (
-          <div className="mb-6 flex justify-end">
-            <button
-              onClick={() => setShowAiImportModal(true)}
-              className="bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-200 px-5 py-2.5 rounded-xl font-bold flex items-center gap-2 transition-colors shadow-sm"
-            >
-              <Sparkles className="w-5 h-5" /> ✨ 透過 AI / MCP 匯入腳本
-            </button>
-          </div>
-        )}
 
         {/* 場景與分鏡列表 */}
         <div className="space-y-8">
