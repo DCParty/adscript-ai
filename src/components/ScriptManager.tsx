@@ -444,7 +444,7 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans pb-32 relative">
       {/* 頂部導航列 */}
       <header className="bg-slate-900 text-white px-4 py-3 shadow-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+        <div className="max-w-screen-2xl mx-auto flex justify-between items-center gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <Link href="/script" className="shrink-0"><BrandLogo theme="dark" /></Link>
             <div className="w-px h-6 bg-slate-700 shrink-0 hidden sm:block" />
@@ -610,7 +610,7 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
         </div>
       )}
 
-      <main className="max-w-7xl mx-auto mt-6 px-4">
+      <main className="max-w-screen-2xl mx-auto mt-6 px-6 lg:px-10">
         {/* 專案基本資料 */}
         <div className="bg-white rounded-xl shadow-sm p-6 mb-6 border border-gray-100 relative overflow-hidden">
           <div className={`absolute top-0 left-0 w-1 h-full ${roleView === 'client' ? 'bg-emerald-500' : 'bg-blue-500'}`}></div>
@@ -691,7 +691,7 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
               <div className="absolute top-0 left-0 w-full bg-slate-800 text-white rounded-t-xl px-4 py-3 flex justify-between items-center shadow-sm">
                 <div className="flex items-center gap-3 w-1/2">
                   <Clapperboard className="w-5 h-5 text-blue-400" />
-                  <span className="font-mono text-sm text-slate-400">SCENE {sceneIndex + 1}</span>
+                  <span className="font-mono text-sm text-slate-400 whitespace-nowrap">SCENE {sceneIndex + 1}</span>
                   <input
                     type="text"
                     value={scene.name}
@@ -723,7 +723,7 @@ const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Pro
                     )}
 
                     {/* 左側：編號、時長與參考圖 */}
-                    <div className="bg-slate-50 border-r border-gray-200 p-4 md:w-56 flex flex-col shrink-0 relative pt-6">
+                    <div className="bg-slate-50 border-r border-gray-200 p-4 md:w-64 flex flex-col shrink-0 relative pt-6">
                       <div className="flex justify-between items-center mb-4 bg-white p-2 rounded-lg border border-slate-200 shadow-sm">
                         <div className="flex items-center gap-1 w-full">
                           <span className="text-[10px] font-bold text-slate-400 uppercase mr-1">SHOT</span>
