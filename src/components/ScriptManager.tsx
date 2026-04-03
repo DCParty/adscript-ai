@@ -79,10 +79,11 @@ const DEFAULT_AI_TOOLS: AiTool[] = [
 interface Props {
   projectId: string;
   projectData?: Project;
+  initialRole?: 'internal' | 'client';
 }
 
-const ScriptManager = ({ projectId, projectData }: Props) => {
-  const [roleView, setRoleView] = useState<'internal' | 'client'>('internal');
+const ScriptManager = ({ projectId, projectData, initialRole = 'internal' }: Props) => {
+  const [roleView, setRoleView] = useState<'internal' | 'client'>(initialRole);
   const [scenes, setScenes] = useState<Scene[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -153,7 +154,7 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
   );
 
   const copyClientLink = () => {
-    const url = `${window.location.origin}/script?c=${project.clientToken}`;
+    const url = `${window.location.origin}/script/${projectId}?c=${project.clientToken}`;
     navigator.clipboard.writeText(url);
     setCopiedLink(true);
     setTimeout(() => setCopiedLink(false), 2000);
@@ -442,14 +443,14 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-800 font-sans pb-32 relative">
       {/* 頂部導航列 */}
-      <header className="bg-slate-900 text-white p-4 shadow-md sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <Link href="/script"><BrandLogo theme="dark" /></Link>
-            <div className="w-px h-6 bg-slate-700" />
-            <h1 className="text-base font-semibold text-slate-300 truncate max-w-xs">{project.name}</h1>
+      <header className="bg-slate-900 text-white px-4 py-3 shadow-md sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto flex justify-between items-center gap-2">
+          <div className="flex items-center gap-3 min-w-0">
+            <Link href="/script" className="shrink-0"><BrandLogo theme="dark" /></Link>
+            <div className="w-px h-6 bg-slate-700 shrink-0 hidden sm:block" />
+            <h1 className="text-sm font-semibold text-slate-300 truncate hidden sm:block">{project.name}</h1>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             {roleView === 'internal' && (
               <>
                 <select
@@ -458,55 +459,48 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
                     setProject({ ...project, status: e.target.value });
                     debouncedProjectPatch('status', e.target.value);
                   }}
-                  className="bg-slate-800 border border-slate-700 text-slate-300 px-3 py-2 rounded-lg text-sm font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors"
+                  className="bg-slate-800 border border-slate-700 text-slate-300 px-2 py-1.5 rounded-lg text-xs font-bold outline-none cursor-pointer hover:bg-slate-700 transition-colors hidden sm:block"
                 >
                   {['草稿中', '待客戶審核', '製作中', '已完成'].map(s => <option key={s}>{s}</option>)}
                 </select>
                 {project.clientToken && (
-                  <button
-                    onClick={copyClientLink}
-                    className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
-                    title="複製客戶連結"
-                  >
+                  <button onClick={copyClientLink} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-slate-300 transition-colors" title={copiedLink ? '已複製！' : '複製客戶連結'}>
                     <LinkIcon className="w-4 h-4" />
-                    {copiedLink ? '已複製！' : '客戶連結'}
                   </button>
                 )}
-                <button
-                  onClick={() => setShowSettingsModal(true)}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
-                >
-                  <Cpu className="w-4 h-4" /> 工具與成本
+                <button onClick={() => setShowSettingsModal(true)} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-slate-300 transition-colors hidden sm:flex" title="工具與成本">
+                  <Cpu className="w-4 h-4" />
                 </button>
-                <button
-                  onClick={downloadAllImages}
-                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 px-3 py-2 rounded-lg flex items-center gap-2 transition-colors text-sm font-bold border border-slate-700"
-                >
-                  <Download className="w-4 h-4" /> 批量下載
+                <button onClick={downloadAllImages} className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg border border-slate-700 text-slate-300 transition-colors hidden sm:flex" title="批量下載">
+                  <Download className="w-4 h-4" />
                 </button>
               </>
             )}
-            <div className="flex bg-slate-800 rounded-lg p-1 border border-slate-700 shadow-inner">
+            {initialRole === 'internal' && (
+              <div className="flex bg-slate-800 rounded-lg p-0.5 border border-slate-700">
+                <button
+                  onClick={() => setRoleView('internal')}
+                  className={`px-2 py-1.5 text-xs font-medium rounded-md flex items-center gap-1 transition-colors ${roleView === 'internal' ? 'bg-blue-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <Eye className="w-3.5 h-3.5" /> <span className="hidden sm:inline">內部</span>
+                </button>
+                <button
+                  onClick={() => setRoleView('client')}
+                  className={`px-2 py-1.5 text-xs font-medium rounded-md flex items-center gap-1 transition-colors ${roleView === 'client' ? 'bg-emerald-500 text-white' : 'text-slate-400 hover:text-white'}`}
+                >
+                  <EyeOff className="w-3.5 h-3.5" /> <span className="hidden sm:inline">客戶</span>
+                </button>
+              </div>
+            )}
+            {roleView === 'internal' && (
               <button
-                onClick={() => setRoleView('internal')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-2 transition-colors ${roleView === 'internal' ? 'bg-blue-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
+                onClick={forceSaveAll}
+                disabled={saving}
+                className="bg-white text-slate-900 hover:bg-gray-100 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-colors shadow-sm font-bold text-xs disabled:opacity-50"
               >
-                <Eye className="w-4 h-4" /> 內部視角
+                <Save className="w-3.5 h-3.5" /> <span className="hidden sm:inline">{saving ? '儲存中...' : '強制儲存'}</span>
               </button>
-              <button
-                onClick={() => setRoleView('client')}
-                className={`px-3 py-1.5 text-sm font-medium rounded-md flex items-center gap-2 transition-colors ${roleView === 'client' ? 'bg-emerald-500 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}
-              >
-                <EyeOff className="w-4 h-4" /> 客戶視角
-              </button>
-            </div>
-            <button
-              onClick={forceSaveAll}
-              disabled={saving}
-              className="bg-white text-slate-900 hover:bg-gray-100 px-5 py-2 rounded-lg flex items-center gap-2 transition-colors shadow-sm font-bold text-sm disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" /> {saving ? '儲存中...' : '強制儲存'}
-            </button>
+            )}
           </div>
         </div>
       </header>
@@ -641,8 +635,8 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
         </div>
 
         {/* 狀態監控儀表板 */}
-        <div className="flex gap-4 mb-6">
-          <div className={`flex-1 p-4 rounded-xl border flex items-center gap-4 transition-colors ${totalDuration > project.duration ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+          <div className={`p-4 rounded-xl border flex items-center gap-4 transition-colors ${totalDuration > project.duration ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
             <Clock className="w-8 h-8 opacity-70" />
             <div>
               <div className="text-xs font-bold uppercase mb-1 flex items-center gap-2">主線累計時長 <span className="text-[10px] bg-slate-200 text-slate-500 px-1.5 rounded">不含備案</span></div>
@@ -651,14 +645,14 @@ const ScriptManager = ({ projectId, projectData }: Props) => {
           </div>
           {roleView === 'internal' && (
             <>
-              <div className={`flex-1 p-4 rounded-xl border flex items-center gap-4 transition-colors ${totalVoLength > maxVoLength ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+              <div className={`p-4 rounded-xl border flex items-center gap-4 transition-colors ${totalVoLength > maxVoLength ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                 <FileText className="w-8 h-8 opacity-70" />
                 <div>
                   <div className="text-xs font-bold uppercase mb-1 flex items-center gap-2">主線旁白字數 <span className="text-[10px] bg-slate-200 text-slate-500 px-1.5 rounded">防呆</span></div>
                   <div className="text-2xl font-black">{totalVoLength} <span className="text-sm font-normal">/ {maxVoLength} 字</span></div>
                 </div>
               </div>
-              <div className="flex-1 p-4 rounded-xl border bg-blue-50 border-blue-200 text-blue-800 flex items-center gap-4">
+              <div className="p-4 rounded-xl border bg-blue-50 border-blue-200 text-blue-800 flex items-center gap-4">
                 <DollarSign className="w-8 h-8 opacity-70" />
                 <div>
                   <div className="text-xs font-bold uppercase mb-1 flex items-center gap-2">AI 生成預估成本 <span className="text-[10px] bg-blue-200 text-blue-700 px-1.5 rounded">含所有備案</span></div>

@@ -48,7 +48,7 @@ function ScriptListPage() {
 
   const copyClientLink = (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/script?c=${project.clientToken}`;
+    const url = `${window.location.origin}/script/${project.id}?c=${project.clientToken}`;
     navigator.clipboard.writeText(url);
     setCopiedId(project.id);
     setTimeout(() => setCopiedId(null), 2000);

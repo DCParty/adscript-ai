@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 
 interface Props {
   params: Promise<{ id: string }>;
+  searchParams: Promise<{ c?: string }>;
 }
 
 async function getProject(id: string) {
@@ -28,13 +29,17 @@ async function getProject(id: string) {
   }
 }
 
-export default async function ScriptEditorPage({ params }: Props) {
+export default async function ScriptEditorPage({ params, searchParams }: Props) {
   const { id } = await params;
+  const { c } = await searchParams;
   const project = await getProject(id);
 
-  if (!project) {
-    notFound();
-  }
+  if (!project) notFound();
 
-  return <ScriptManager projectId={id} projectData={project} />;
+  // Token provided but doesn't match → deny access
+  if (c && project.clientToken && c !== project.clientToken) notFound();
+
+  const initialRole = c ? 'client' : 'internal';
+
+  return <ScriptManager projectId={id} projectData={project} initialRole={initialRole} />;
 }
