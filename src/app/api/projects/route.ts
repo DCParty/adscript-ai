@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { notion } from '@/lib/notion-script';
 
-// GET /api/projects — list all projects
-export async function GET() {
+// GET /api/projects — list all projects (optional ?token=xxx to filter by client)
+export async function GET(req: NextRequest) {
   try {
+    const token = req.nextUrl.searchParams.get('token');
+
     const res = await notion.databases.query({
       database_id: process.env.NOTION_SCRIPT_PROJECTS_DB_ID!,
       sorts: [{ timestamp: 'created_time', direction: 'descending' }],
+      ...(token ? {
+        filter: { property: 'client_token', rich_text: { equals: token } },
+      } : {}),
     });
 
     const projects = res.results.map((page: any) => {
@@ -34,13 +39,14 @@ export async function GET() {
 // POST /api/projects — create new project
 export async function POST(req: NextRequest) {
   try {
-    const { name, clientName, platform, format, duration, videoType } = await req.json();
+    const { name, clientName, clientToken, platform, format, duration, videoType } = await req.json();
 
     const page = await notion.pages.create({
       parent: { database_id: process.env.NOTION_SCRIPT_PROJECTS_DB_ID! },
       properties: {
         name: { title: [{ text: { content: name || '新專案' } }] },
         client_name: { rich_text: [{ text: { content: clientName || '' } }] },
+        client_token: { rich_text: [{ text: { content: clientToken || '' } }] },
         platform: platform ? { select: { name: platform } } : undefined,
         format: format ? { select: { name: format } } : undefined,
         duration: { number: Number(duration) || 15 },

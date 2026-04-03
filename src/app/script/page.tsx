@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Plus, Clapperboard, Clock, ChevronRight, Loader2 } from 'lucide-react';
 import BrandLogo from '@/components/BrandLogo';
 
@@ -27,8 +27,11 @@ const STATUS_COLOR: Record<string, string> = {
 const PLATFORMS = ['Meta (FB/IG)', 'YouTube', 'TikTok', 'LINE', '其他'];
 const FORMATS = ['9:16 直版', '16:9 橫版', '1:1 正方'];
 
-export default function ScriptListPage() {
+function ScriptListPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const clientToken = searchParams.get('c') || '';
+
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
@@ -43,11 +46,12 @@ export default function ScriptListPage() {
   });
 
   useEffect(() => {
-    fetch('/api/projects')
+    const url = clientToken ? `/api/projects?token=${clientToken}` : '/api/projects';
+    fetch(url)
       .then(r => r.json())
       .then(data => { setProjects(Array.isArray(data) ? data : []); setLoading(false); })
       .catch(() => setLoading(false));
-  }, []);
+  }, [clientToken]);
 
   const handleCreate = async () => {
     if (!form.name.trim()) return;
@@ -56,7 +60,7 @@ export default function ScriptListPage() {
       const res = await fetch('/api/projects', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, clientToken }),
       });
       const data = await res.json();
       if (data.id) router.push(`/script/${data.id}`);
@@ -226,4 +230,8 @@ export default function ScriptListPage() {
       </main>
     </div>
   );
+}
+
+export default function Page() {
+  return <Suspense><ScriptListPage /></Suspense>;
 }
