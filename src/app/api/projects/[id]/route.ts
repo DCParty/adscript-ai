@@ -7,9 +7,11 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { id } = await params;
     const { field, value } = await req.json();
 
+    const rt = (v: unknown) => [{ text: { content: String(v ?? '').slice(0, 2000) } }];
     const map: Record<string, Record<string, unknown>> = {
-      status: { status: { select: { name: value } } },
-      notes:  { notes:  { rich_text: [{ text: { content: String(value).slice(0, 2000) } }] } },
+      status:      { status:       { select: { name: value } } },
+      notes:       { notes:        { rich_text: rt(value) } },
+      clientToken: { client_token: { rich_text: rt(value) } },
     };
 
     const props = map[field];

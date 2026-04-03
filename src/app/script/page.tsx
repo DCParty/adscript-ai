@@ -46,9 +46,20 @@ function ScriptListPage() {
     setProjects(prev => prev.filter(p => p.id !== id));
   };
 
-  const copyClientLink = (e: React.MouseEvent, project: Project) => {
+  const copyClientLink = async (e: React.MouseEvent, project: Project) => {
     e.stopPropagation();
-    const url = `${window.location.origin}/script/${project.id}?c=${project.clientToken}`;
+    let token = project.clientToken;
+    if (!token) {
+      // Generate and save token for old projects
+      token = Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 8);
+      await fetch(`/api/projects/${project.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ field: 'clientToken', value: token }),
+      });
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, clientToken: token } : p));
+    }
+    const url = `${window.location.origin}/script/${project.id}?c=${token}`;
     navigator.clipboard.writeText(url);
     setCopiedId(project.id);
     setTimeout(() => setCopiedId(null), 2000);
@@ -241,16 +252,14 @@ function ScriptListPage() {
                 </div>
                 {!clientToken && (
                   <div className="flex items-center gap-2 shrink-0">
-                    {project.clientToken && (
-                      <button
-                        onClick={e => copyClientLink(e, project)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-all text-xs font-bold"
-                      >
-                        {copiedId === project.id
-                          ? <><span className="text-green-400">✓</span> 已複製</>
-                          : <><Link2 className="w-3 h-3" /> 複製客戶連結</>}
-                      </button>
-                    )}
+                    <button
+                      onClick={e => copyClientLink(e, project)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-blue-600 text-slate-400 hover:text-white border border-slate-700 hover:border-blue-500 transition-all text-xs font-bold"
+                    >
+                      {copiedId === project.id
+                        ? <><span className="text-green-400">✓</span> 已複製</>
+                        : <><Link2 className="w-3 h-3" /> 複製客戶連結</>}
+                    </button>
                     <button
                       onClick={e => deleteProject(e, project.id, project.name)}
                       title="刪除專案"
